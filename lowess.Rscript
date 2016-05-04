@@ -52,7 +52,7 @@ option_list <- list(
     make_option(c("-l","--genome-library"), help="Bioconductor BSgenome library name", default = "BSgenome.Mmusculus.UCSC.mm9"),
     make_option(c("-n","--genome-name"), help="genome library object name. ex: \"Mmusculus\", \"Hsapiens\", \"Scerevisiae\"", default = "Mmusculus"),
     make_option(c("-t","--genome-type"), help="genome type , example mm9, mm10, hg19, hg18, default is NULL", default = ""),
-    make_option(c("-w","--window-size"), help="sliding window size , default is 2500", default = 2500),
+    make_option(c("-w","--window-size"), help="sliding window size , default is 2500", default = 2500)
 
 )
 
