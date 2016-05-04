@@ -108,6 +108,7 @@ for (file.name in mtbr.filenames){
 	 if(file_test("-f", file.path))
 	 {
 	 	message("[*] Processing ", file.name, "\t", date())
+	 	chr.name <- paste(head(unlist(strsplit(basename(file.name), ".", fixed = TRUE)), -1), sep="", collapse = "." )
 	 
 	 	# read the mtbr file
 	 	
@@ -119,7 +120,7 @@ for (file.name in mtbr.filenames){
 	 	
 	 	message("\tgetting CG density ", "\t", date())
 	 	
-	 	dna.seq <- kGenome[[file.name]]
+	 	dna.seq <- kGenome[[chr.name]]
 	 	ref.length <- length(dna.seq)
 		density <- GetDensity(cg.mtbr, kWindowSize, ref.length)
 
@@ -136,7 +137,6 @@ for (file.name in mtbr.filenames){
 	 	# write csv file
 	 	
 		message("\t writting csv file","\t",date())
-		chr.name <- paste(head(unlist(strsplit(basename(file.name), ".", fixed = TRUE)), -1), sep="", collapse = "." )
 		write.table(rescale.data, paste("./", chr.name, sep = ""), seq = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
 	 }
 
