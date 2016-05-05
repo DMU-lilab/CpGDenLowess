@@ -136,8 +136,8 @@ for (file.name in mtbr.filenames){
  	
 	 	# write csv file
 	 	
-		message("\t writting csv file","\t",date())
-		write.table(rescale.data, paste("./", chr.name, sep = ""), sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+		message("\twritting csv file","\t",date())
+		write.table(rescale.data, paste("./", chr.name, ".csv", sep = ""), sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
 	 }
 
 }
