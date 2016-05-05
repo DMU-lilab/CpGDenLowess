@@ -164,7 +164,7 @@ def main():
 		for i  in range(segcount - 1):
 			segstart = seg[i]
 			segend = seg[i + 1]
-			if(score >= segstart[0] && score <= segend[0]):
+			if(score >= segstart[0] and score <= segend[0]):
 				found = True
 				break;
 
