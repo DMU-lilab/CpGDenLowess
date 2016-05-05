@@ -149,7 +149,7 @@ def main():
 		a = (segend[1] - segstart[1]) * 1.0 / (segend[0] - segstart[0])
 		delta = (1 - segstart[0] - segstart[1]) / 2.0
 		theta = math.atan(a) - (135 * math.pi / 180)
-		seg[i] += [delta, theta]
+		seg[i] += (delta, theta)
 
 	# tranform data points
 
