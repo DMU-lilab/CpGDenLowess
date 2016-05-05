@@ -168,7 +168,7 @@ def main():
 				found = True
 				break;
 
-		if(!found):
+		if( not found):
 			log.info("error: data point (" + str(score) + "," + str(density), ") can not be located in segments")
 			sys.exit(-1)
 
