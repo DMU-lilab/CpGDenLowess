@@ -44,12 +44,6 @@ def init_log(logfilename):
 
 	return(logging.getLogger(''))
 
-def calculate_bin(density, score, N, spl):
-	step = (np.max(score) - np.min(lowess.data$x)) / N
-	x = range(np.min(lowess.data$x), np.max(lowess.data$x), step)
-	y = spl(x)
-
-
 def load_cg_csv(filename):
 	cg = []
 	with open(filename, 'r') as cgcsvFile :
