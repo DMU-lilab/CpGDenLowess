@@ -50,7 +50,7 @@ def load_cg_csv(filename):
 		lines = csv.reader(cgcsvFile, delimiter = '\t')
 		next(lines, None)
 		for line in lines:
-			cg += [int(line[0]), int(line[1])]
+			cg += [float(line[0]), float(line[1])]
 	cgcsvFile.close()
 	return(cg)
 
