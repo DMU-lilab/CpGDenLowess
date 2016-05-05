@@ -50,7 +50,7 @@ def load_cg_csv(filename):
 		lines = csv.reader(cgcsvFile, delimiter = '\t')
 		next(lines, None)
 		for line in lines:
-			cg += [(int(line[0])), (int(line[1]))]
+			cg += [int(line[0]), int(line[1])]
 	cgcsvFile.close()
 	return(cg)
 
@@ -101,11 +101,11 @@ def main():
 		type = str, 
 		help='CpG density and score csv file')
 	parser.add_argument('-b', '--bin', dest = 'bin',
-		type = int,
+		type = int, default = 5000,
 		help = 'bin count')
-	parser.add_argument('-f', '--smoother', dest = 'smoother',
-		type = float,
-		help = 'smoother span')
+	parser.add_argument('-f', '--frac', dest = 'frac',
+		type = float, default = 0.3333333,
+		help = 'frac span')
 
 	args = parser.parse_args()
 
@@ -132,7 +132,7 @@ def main():
 
 	log.info('[*] performing lowess fitting')
 
-	cglowess = sm.nonparametric.lowess(score, density, frac = 1.0 / 3)
+	cglowess = sm.nonparametric.lowess(score, density, frac = args.frac)
 
 	# build segements
 
