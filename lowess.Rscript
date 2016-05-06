@@ -6,7 +6,9 @@
 
 suppressPackageStartupMessages(library("optparse", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("data.table", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("zoo", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("methyutils", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("IRanges", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 
 # function
 
@@ -175,8 +177,8 @@ for (file.name in mtbr.filenames){
 		df.seg$xe[nrow(df.seg)] <- df.seg$xe[nrow(df.seg)] + 0.1 
 		rng.seg <- IRanges(start = df.seg$xs * 1e8, end = df.seg$xe * 1e8)
 		rng.score <- IRanges(start = rescale.data$score * 1e8, end = rescale.data$score * 1e8)
-		ov <- findOverlaps(rng.score, rng.seg)
-		rescale.data$id <- subjectHits(ov)
+		ov <- findOverlaps(rng.score, rng.seg, select = "first")
+		rescale.data$id <- ov
 		rescale.data <- merge(rescale.data, df.seg, by = "id")
 		dt.rescale.data <- data.table(rescale.data)
 
