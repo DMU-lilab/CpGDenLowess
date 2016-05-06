@@ -46,6 +46,23 @@ RescaleData <- function(density, score) {
    return(data.frame(density = density.scale, score = score.scale))
  }
 
+Rotate <- function(x, y, x0, y0, theta){
+  xt <- x - x0
+  yt <- y - y0
+  
+  xr <- xt * cos(theta) - yt * sin(theta)
+  yr <- xt * sin(theta) + yt * cos(theta)
+  
+  return(c(xr + x0, yr + y0))
+
+}
+ 
+Transform <- function(x, y, x0, y0, delta, theta){
+  xyt <- Rotate(x + delta, y + delta, x0, y0, theta)
+
+  return(xyt)
+}
+
 ##Specify desired options in a list
 
 option_list <- list(
@@ -134,10 +151,49 @@ for (file.name in mtbr.filenames){
 		message("\trescaling ", "\t", date())
 	 	rescale.data <- RescaleData(density, score)
  	
-	 	# write csv file
+ 		#  lowess
+
+ 		message("\tlowess regression ", "\t", date())
+ 		lowess.data <- lowess(rescale.data$score, rescale.data$density, f = 0.08)
+
+ 		# build segements
+
+ 		message("\tbuilding segements ", "\t", date())	
+		N <- 5000
+		step <- (max(lowess.data$x) - min(lowess.data$x)) / N
+		x <- seq(min(lowess.data$x), max(lowess.data$x), step)
+		y <- approx(lowess.data, xout= x)$y
+		x.start <- head(x, -1)
+		y.start <- head(y, -1)
+		x.end <- tail(x, -1)
+		y.end <- tail(y, -1)
+		a <- (y.end - y.start) / (x.end - x.start)
+		b <- y.start - a * x.start
+		theta <- atan(a) - (135 * pi / 180)
+		delta = (1 - x.start - y.start) / 2
+		df.seg <- data.frame(id = 1:length(x.start), xs = x.start, ys = y.start, xe = x.end, ye = y.end, delta = delta, theta = theta )
+		rng.seg <- IRanges(start = df.seg$xs * 1e8, end = df.seg$xe * 1e8)
+		rng.score <- IRanges(start = rescale.data$score * 1e8, end = rescale.data$score * 1e8)
+		ov <- findOverlaps(rng.score, rng.seg)
+		rescale.data$id <- subjectHits(ov)
+		rescale.data <- merge(rescale.data, df.seg, by = "id")
+		dt.rescale.data <- data.table(rescale.data)
+
+		data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
+		df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
+
+	 	# write wig file
 	 	
-		message("\twritting csv file","\t",date())
-		write.table(format(rescale.data, digits = 6), paste("./", chr.name, ".csv", sep = ""), sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+		message("\twritting wig file","\t", date())
+		head <- paste("variableStep chrom=", chr.name, " span=1\n", sep = "")
+		score.wig <- file.path(paste("./", chr.name, ".score.trans.wig", sep = ""))
+		density.wig <- file.path(paste("./", chr.name, ".density.trans.wig", sep = ""))
+
+		cat(head, file = score.wig, append = TRUE)
+		cat(head, file = density.wig, append = TRUE)
+	
+		write.table(df.trans$score, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(df.trans$density, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
 	 }
 
 }
