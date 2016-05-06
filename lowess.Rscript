@@ -172,6 +172,7 @@ for (file.name in mtbr.filenames){
 		theta <- atan(a) - (135 * pi / 180)
 		delta = (1 - x.start - y.start) / 2
 		df.seg <- data.frame(id = 1:length(x.start), xs = x.start, ys = y.start, xe = x.end, ye = y.end, delta = delta, theta = theta )
+		df.seg$xe[nrow(df.seg)] <- df.seg$xe[nrow(df.seg)] + 0.1 
 		rng.seg <- IRanges(start = df.seg$xs * 1e8, end = df.seg$xe * 1e8)
 		rng.score <- IRanges(start = rescale.data$score * 1e8, end = rescale.data$score * 1e8)
 		ov <- findOverlaps(rng.score, rng.seg)
