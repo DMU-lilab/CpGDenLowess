@@ -153,6 +153,7 @@ for (file.name in mtbr.filenames){
 		message("\trescaling ", "\t", date())
 	 	rescale.data <- RescaleData(density, score)
  		rescale.data$pos <- 1:nrow(rescale.data)
+
  		#  lowess
 
  		message("\tlowess regression ", "\t", date())
@@ -183,8 +184,14 @@ for (file.name in mtbr.filenames){
 		dt.seg <- data.table(df.seg)
 		dt.rescale.data <- merge(dt.rescale.data, dt.seg, by = "id")
 
-		data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
-		df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
+		# data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
+		# df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
+
+		dt.rescale.data$xt <- with(dt.rescale.data, score + delta - xs)
+		dt.rescale.data$yt <- with(dt.rescale.data, density + delta - ys)
+
+		dt.rescale.data$score.t <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta) + xs)
+		dt.rescale.data$density.t <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta) + ys)
 
 	 	# write wig file
 	 	
@@ -196,8 +203,8 @@ for (file.name in mtbr.filenames){
 		cat(head, file = score.wig, append = TRUE)
 		cat(head, file = density.wig, append = TRUE)
 	
-		write.table(df.trans$score, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
-		write.table(df.trans$density, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(dt.rescale.data$score.t, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(dt.rescale.data$density.t, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
 	 }
 
 }
