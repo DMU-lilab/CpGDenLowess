@@ -151,6 +151,8 @@ def main():
 		theta = math.atan(a) - (135 * math.pi / 180)
 		seg[i] += (delta, theta)
 
+	print(seg)
+
 	# tranform data points
 
 	log.info('[*] transforming data points')
@@ -171,9 +173,9 @@ def main():
 		if( not found):
 			log.info("error: data point (" + str(score) + "," + str(density), ") can not be located in segments")
 			sys.exit(-1)
-		
+
 		# transform data point
-		
+
 		cgtrans += [transform(score, density, segstart[0], segstart[1], segstart[2], segstart[3])]
 
 	log.info('[*] writting output files')
