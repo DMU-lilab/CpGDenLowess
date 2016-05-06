@@ -157,7 +157,8 @@ for (file.name in mtbr.filenames){
  		#  lowess
 
  		message("\tlowess regression ", "\t", date())
- 		lowess.data <- lowess(rescale.data$score, rescale.data$density, f = 0.08)
+ 		rescale.data.cg <- rescale.data[cg.mtbr$posi,]
+ 		lowess.data <- lowess(rescale.data.cg$score, rescale.data.cg$density, f = 0.08)
 
  		# build segements
 
