@@ -152,7 +152,7 @@ for (file.name in mtbr.filenames){
 
 		message("\trescaling ", "\t", date())
 	 	rescale.data <- RescaleData(density, score)
- 	
+ 		rescale.data$pos <- 1:nrow(rescale.data)
  		#  lowess
 
  		message("\tlowess regression ", "\t", date())
@@ -179,8 +179,9 @@ for (file.name in mtbr.filenames){
 		rng.score <- IRanges(start = rescale.data$score * 1e8, end = rescale.data$score * 1e8)
 		ov <- findOverlaps(rng.score, rng.seg, select = "first")
 		rescale.data$id <- ov
-		rescale.data <- merge(rescale.data, df.seg, by = "id")
 		dt.rescale.data <- data.table(rescale.data)
+		dt.seg <- data.table(df.seg)
+		dt.rescale.data <- merge(dt.rescale.data, dt.seg, by = "id")
 
 		data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
 		df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
