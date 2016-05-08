@@ -71,7 +71,14 @@ option_list <- list(
     make_option(c("-l","--genome-library"), help="Bioconductor BSgenome library name", default = "BSgenome.Mmusculus.UCSC.mm9"),
     make_option(c("-n","--genome-name"), help="genome library object name. ex: \"Mmusculus\", \"Hsapiens\", \"Scerevisiae\"", default = "Mmusculus"),
     make_option(c("-t","--genome-type"), help="genome type , example mm9, mm10, hg19, hg18, default is NULL", default = ""),
-    make_option(c("-w","--window-size"), help="sliding window size , default is 2500", default = 2500)
+    make_option(c("-w","--window-size"), help="sliding window size , default is 2500", default = 2500),
+    make_option(c("-b","--bin-size"), help="bin size , default is 5000", default = 5000),
+    make_option(c("-f","--frac-span"), help="frac span , default is 0.08", default = 0.08),
+    make_option(c("-c","--cmpl-delta"), help="cmpl delta , default is 0.1", default = 0.1),
+    make_option(c("-e","--cut-len"), help="cutoff length , default is 30", default = 30),
+    make_option(c("-t","--tol-len"), help="tolerance length , default is 2", default = 2)
+
+
 
 )
 
@@ -85,6 +92,10 @@ kGenomeName <- opt$`genome-name`
 kGenomeType <- opt$`genome-type`
 kWindowSize <- opt$`window-size`
 kMtbrPath <- arguments$args
+kBinSize <- opt$`bin-size`
+kFracSpan <- opt$`frac-span`
+kCutLen <- opt$`cut-len`
+kTolLen <- opt$`tol-len`
 
 # Get mtbr file names
 
@@ -158,12 +169,12 @@ for (file.name in mtbr.filenames){
 
  		message("\tlowess regression ", "\t", date())
  		rescale.data.cg <- rescale.data[cg.mtbr$posi,]
- 		lowess.data <- lowess(rescale.data.cg$score, rescale.data.cg$density, f = 0.08)
+ 		lowess.data <- lowess(rescale.data.cg$score, rescale.data.cg$density, f = kFracSpan)
 
  		# build segements
 
  		message("\tbuilding segements ", "\t", date())	
-		N <- 5000
+		N <- kBinSize
 		step <- (max(lowess.data$x) - min(lowess.data$x)) / N
 		x <- seq(min(lowess.data$x), max(lowess.data$x), step)
 		y <- approx(lowess.data, xout= x)$y
@@ -188,14 +199,34 @@ for (file.name in mtbr.filenames){
 		# data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
 		# df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
 
-		dt.rescale.data$xt <- with(dt.rescale.data, score + delta - xs)
-		dt.rescale.data$yt <- with(dt.rescale.data, density + delta - ys)
+		dt.rescale.data$xt <- with(dt.rescale.data, score - xs)
+		dt.rescale.data$yt <- with(dt.rescale.data, density - ys)
 
-		dt.rescale.data$score.t <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta) + xs)
-		dt.rescale.data$density.t <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta) + ys)
+		dt.rescale.data$score.t <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta) + xs + delta)
+		dt.rescale.data$density.t <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta) + ys + delta)
+
+		dt.rescale.data$icmp <- dt.rescale.data$density.t + dt.rescale.data$score.t - 1
+		cmarker <- dt.rescale.data$icmp >= -kCmplDelta & dt.rescale.data$icmp <= kCmplDelta
+		gmarker <- dt.rescale.data$icmp < -kCmplDelta
+		omarker <- dt.rescale.data$icmp > kCmplDelta
+
+		# get gap and overlap region
+
+		message("\tgetting regions","\t", date())
+		cregion <- regionAsBed(marker = cmarker, cf.length = kCutLen, tolerance.length = kTolLen, chrom = chr.name)
+		gregion <- regionAsBed(marker = gmarker, cf.length = kCutLen, tolerance.length = kTolLen, chrom = chr.name)
+		oregion <- regionAsBed(marker = omarker, cf.length = kCutLen, tolerance.length = kTolLen, chrom = chr.name)
+
+		# write regions file
+
+		message("\twritting regions file","\t", date())
+		write.table(cregion, paste("./", chr.name, ".cregion.txt", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(gregion, paste("./", chr.name, ".gregion.txt", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(oregion, paste("./", chr.name, ".oregion.txt", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+
 
 	 	# write wig file
-	 	
+
 		message("\twritting wig file","\t", date())
 		head <- paste("variableStep chrom=", chr.name, " span=1\n", sep = "")
 		score.wig <- file.path(paste("./", chr.name, ".score.trans.wig", sep = ""))
