@@ -94,6 +94,7 @@ kWindowSize <- opt$`window-size`
 kMtbrPath <- arguments$args
 kBinSize <- opt$`bin-size`
 kFracSpan <- opt$`frac-span`
+kCmplDelta <- opt$`cmpl-delta`
 kCutLen <- opt$`cut-len`
 kTolLen <- opt$`tol-len`
 
