@@ -48,22 +48,22 @@ RescaleData <- function(density, score) {
    return(data.frame(density = density.scale, score = score.scale))
  }
 
-Rotate <- function(x, y, x0, y0, theta){
-  xt <- x - x0
-  yt <- y - y0
+# Rotate <- function(x, y, x0, y0, theta){
+#   xt <- x - x0
+#   yt <- y - y0
   
-  xr <- xt * cos(theta) - yt * sin(theta)
-  yr <- xt * sin(theta) + yt * cos(theta)
+#   xr <- xt * cos(theta) - yt * sin(theta)
+#   yr <- xt * sin(theta) + yt * cos(theta)
   
-  return(c(xr + x0, yr + y0))
+#   return(c(xr + x0, yr + y0))
 
-}
+# }
  
-Transform <- function(x, y, x0, y0, delta, theta){
-  xyt <- Rotate(x + delta, y + delta, x0, y0, theta)
+# Transform <- function(x, y, x0, y0, delta, theta){
+#   xyt <- Rotate(x + delta, y + delta, x0, y0, theta)
 
-  return(xyt)
-}
+#   return(xyt)
+# }
 
 ##Specify desired options in a list
 
@@ -175,8 +175,7 @@ for (file.name in mtbr.filenames){
  		# build segements
 
  		message("\tbuilding segements ", "\t", date())	
-		N <- kBinSize
-		step <- (max(lowess.data$x) - min(lowess.data$x)) / N
+		step <- (max(lowess.data$x) - min(lowess.data$x)) / kBinSize
 		x <- seq(min(lowess.data$x), max(lowess.data$x), step)
 		y <- approx(lowess.data, xout= x)$y
 		x.start <- head(x, -1)
@@ -185,7 +184,8 @@ for (file.name in mtbr.filenames){
 		y.end <- tail(y, -1)
 		a <- (y.end - y.start) / (x.end - x.start)
 		b <- y.start - a * x.start
-		theta <- atan(a) - (135 * pi / 180)
+		# theta <- -(atan(a) + (45 *pi / 180))
+		theta <- -45 * pi / 180
 		delta = (1 - x.start - y.start) / 2
 		df.seg <- data.frame(id = 1:length(x.start), xs = x.start, ys = y.start, xe = x.end, ye = y.end, delta = delta, theta = theta )
 		df.seg$xe[nrow(df.seg)] <- df.seg$xe[nrow(df.seg)] + 0.1 
@@ -200,11 +200,26 @@ for (file.name in mtbr.filenames){
 		# data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
 		# df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
 
-		dt.rescale.data$xt <- with(dt.rescale.data, score - xs)
-		dt.rescale.data$yt <- with(dt.rescale.data, density - ys)
+		# dt.rescale.data$xt <- with(dt.rescale.data, score - xs)
+		# dt.rescale.data$yt <- with(dt.rescale.data, density - ys)
 
-		dt.rescale.data$score.t <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta) + xs + delta)
-		dt.rescale.data$density.t <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta) + ys + delta)
+		# dt.rescale.data$score.t <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta) + xs + delta)
+		# dt.rescale.data$density.t <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta) + ys + delta)
+
+		dt.rescale.data$xt <- with(dt.rescale.data, score + delta)
+		dt.rescale.data$yt <- with(dt.rescale.data, density + delta)		
+		dt.rescale.data$cx <- with(dt.rescale.data, xs + delta)
+		dt.rescale.data$cy <- with(dt.rescale.data, ys + delta)
+		dt.rescale.data$xt <- with(dt.rescale.data, xt - cx)
+		dt.rescale.data$yt <- with(dt.rescale.data, yt - cy)
+		dt.rescale.data$xr <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta))
+		dt.rescale.data$yr <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta))
+		dt.rescale.data$score.t <- with(dt.rescale.data, xr + cx)
+		dt.rescale.data$density.t <- with(dt.rescale.data, yr + cy)
+
+		
+
+
 
 		dt.rescale.data$icmp <- dt.rescale.data$density.t + dt.rescale.data$score.t - 1
 		cmarker <- dt.rescale.data$icmp >= -kCmplDelta & dt.rescale.data$icmp <= kCmplDelta
@@ -221,23 +236,23 @@ for (file.name in mtbr.filenames){
 		# write regions file
 
 		message("\twritting regions file","\t", date())
-		write.table(cregion, paste("./", chr.name, ".cregion.txt", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
-		write.table(gregion, paste("./", chr.name, ".gregion.txt", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
-		write.table(oregion, paste("./", chr.name, ".oregion.txt", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(cregion, paste("./", chr.name, ".cregion.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
+		write.table(gregion, paste("./", chr.name, ".gregion.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
+		write.table(oregion, paste("./", chr.name, ".oregion.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 
 	 	# write wig file
 
 		message("\twritting wig file","\t", date())
-		head <- paste("variableStep chrom=", chr.name, " span=1\n", sep = "")
+		head <- paste("fixedStep chrom=", chr.name, " start=1 step=1\n", sep = "")
 		score.wig <- file.path(paste("./", chr.name, ".score.trans.wig", sep = ""))
 		density.wig <- file.path(paste("./", chr.name, ".density.trans.wig", sep = ""))
 
 		cat(head, file = score.wig, append = TRUE)
 		cat(head, file = density.wig, append = TRUE)
 	
-		write.table(dt.rescale.data$score.t, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
-		write.table(dt.rescale.data$density.t, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(dt.rescale.data$score.t, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE)
+		write.table(dt.rescale.data$density.t, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE)
 	 }
 
 }
