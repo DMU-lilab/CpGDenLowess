@@ -251,8 +251,8 @@ for (file.name in mtbr.filenames){
 		cat(head, file = score.wig, append = TRUE)
 		cat(head, file = density.wig, append = TRUE)
 	
-		write.table(dt.rescale.data$score.t, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE)
-		write.table(dt.rescale.data$density.t, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE)
+		write.table(dt.rescale.data$score.t, score.wig, row.names = FALSE, col.names = FALSE, quote = TRUE)
+		write.table(dt.rescale.data$density.t, density.wig, row.names = FALSE, col.names = FALSE, quote = TRUE)
 	 }
 
 }
