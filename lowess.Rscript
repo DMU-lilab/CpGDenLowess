@@ -233,7 +233,7 @@ for (file.name in mtbr.filenames){
 		# write regions file
 
 		message("\twritting regions file","\t", date())
-		write.table(df.regions, paste("./", chr.name, ".regions.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
+		write.table(df.regions, paste("./", chr.name, ".regions.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
 
 	 	# write wig file
 
@@ -245,8 +245,8 @@ for (file.name in mtbr.filenames){
 		cat(head, file = score.wig, append = TRUE)
 		cat(head, file = density.wig, append = TRUE)
 	
-		write.table(dt.rescale.data$score.t, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
-		write.table(dt.rescale.data$density.t, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE)
+		write.table(dt.rescale.data$score.t, score.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE, sep = "\t")
+		write.table(dt.rescale.data$density.t, density.wig, row.names = FALSE, col.names = FALSE, quote = FALSE, append = TRUE, sep = "\t")
 	 }
 
 }
