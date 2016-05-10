@@ -59,7 +59,7 @@ option_list <- list(
     make_option(c("-f","--frac-span"), help="frac span , default is 0.08", default = 0.08),
     make_option(c("-c","--cmpl-delta"), help="cmpl delta , default is 0.1", default = 0.1),
     make_option(c("-e","--cut-len"), help="cutoff length , default is 30", default = 30),
-    make_option(c("-t","--tol-len"), help="tolerance length , default is 2", default = 2)
+    make_option(c("-r","--tol-len"), help="tolerance length , default is 2", default = 2)
 )
 
 # Get command line options
