@@ -48,23 +48,6 @@ RescaleData <- function(density, score) {
    return(data.frame(density = density.scale, score = score.scale))
  }
 
-# Rotate <- function(x, y, x0, y0, theta){
-#   xt <- x - x0
-#   yt <- y - y0
-  
-#   xr <- xt * cos(theta) - yt * sin(theta)
-#   yr <- xt * sin(theta) + yt * cos(theta)
-  
-#   return(c(xr + x0, yr + y0))
-
-# }
- 
-# Transform <- function(x, y, x0, y0, delta, theta){
-#   xyt <- Rotate(x + delta, y + delta, x0, y0, theta)
-
-#   return(xyt)
-# }
-
 ##Specify desired options in a list
 
 option_list <- list(
@@ -77,9 +60,6 @@ option_list <- list(
     make_option(c("-c","--cmpl-delta"), help="cmpl delta , default is 0.1", default = 0.1),
     make_option(c("-e","--cut-len"), help="cutoff length , default is 30", default = 30),
     make_option(c("-t","--tol-len"), help="tolerance length , default is 2", default = 2)
-
-
-
 )
 
 # Get command line options
@@ -128,8 +108,6 @@ if ( kGenomeType %in% names(kGenomeTypeList) ){
 if ( is.null(kGenome)){
 	stop( "Load Biocondutor Genome Library ERROR " )
 }
-
-# sample.name <- paste(head(unlist(strsplit(basename(kMtbrPath), ".", fixed = TRUE)),-1),sep="",collapse = "." )
 
 # read and process the mtbr files
 for (file.name in mtbr.filenames){
@@ -198,14 +176,6 @@ for (file.name in mtbr.filenames){
 		dt.seg <- data.table(df.seg)
 		dt.rescale.data <- merge(dt.rescale.data, dt.seg, by = "id")
 		dt.rescale.data <- dt.rescale.data[order(dt.rescale.data$pos),]
-		# data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
-		# df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
-
-		# dt.rescale.data$xt <- with(dt.rescale.data, score - xs)
-		# dt.rescale.data$yt <- with(dt.rescale.data, density - ys)
-
-		# dt.rescale.data$score.t <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta) + xs + delta)
-		# dt.rescale.data$density.t <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta) + ys + delta)
 
 		dt.rescale.data$xt <- with(dt.rescale.data, score + delta)
 		dt.rescale.data$yt <- with(dt.rescale.data, density + delta)		
@@ -218,14 +188,10 @@ for (file.name in mtbr.filenames){
 		dt.rescale.data$score.t <- with(dt.rescale.data, xr + cx)
 		dt.rescale.data$density.t <- with(dt.rescale.data, yr + cy)
 
-		
-
-
-
 		dt.rescale.data$icmp <- dt.rescale.data$density.t + dt.rescale.data$score.t - 1
 		dt.rescale.data$type <- "C"
 		dt.rescale.data$type[dt.rescale.data$icmp > kCmplDelta] <- "O"
-		dt.rescale.data$type[dt.rescale.data$icmp < kCmplDelta] <- "G"
+		dt.rescale.data$type[dt.rescale.data$icmp < -kCmplDelta] <- "G"
 
 		cmarker <- dt.rescale.data$type == "C"
 		gmarker <- dt.rescale.data$type == "G"
@@ -284,4 +250,3 @@ for (file.name in mtbr.filenames){
 	 }
 
 }
-
