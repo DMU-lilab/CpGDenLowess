@@ -223,9 +223,13 @@ for (file.name in mtbr.filenames){
 
 
 		dt.rescale.data$icmp <- dt.rescale.data$density.t + dt.rescale.data$score.t - 1
-		cmarker <- dt.rescale.data$icmp >= -kCmplDelta & dt.rescale.data$icmp <= kCmplDelta
-		gmarker <- dt.rescale.data$icmp < -kCmplDelta
-		omarker <- dt.rescale.data$icmp > kCmplDelta
+		dt.rescale.data$type <- "C"
+		dt.rescale.data$type[dt.rescale.data$icmp > kCmplDelta] <- "O"
+		dt.rescale.data$type[dt.rescale.data$icmp < kCmplDelta] <- "G"
+
+		cmarker <- dt.rescale.data$type == "C"
+		gmarker <- dt.rescale.data$type == "G"
+		omarker <- dt.rescale.data$type == "O"
 
 		# get gap and overlap region
 
@@ -234,13 +238,36 @@ for (file.name in mtbr.filenames){
 		gregion <- regionAsBed(marker = gmarker, cf.length = kCutLen, tolerance.length = kTolLen, chrom = chr.name)
 		oregion <- regionAsBed(marker = omarker, cf.length = kCutLen, tolerance.length = kTolLen, chrom = chr.name)
 
+		cregion$type <- "C"
+		gregion$type <- "G"
+		oregion$type <- "O"
+
+		cregion$s <- 0
+		gregion$s <- 0
+		oregion$s <- 0
+
+		cregion$strand <- "+"
+		gregion$strand <- "+"
+		oregion$strand <- "+"
+
+		cregion$thickstart <- cregion$start
+		gregion$thickstart <- gregion$start
+		oregion$thickstart <- oregion$start
+
+		cregion$thickend <- cregion$end
+		gregion$thickend <- gregion$end
+		oregion$thickend <- oregion$end
+
+		cregion$color <- "255,0,0"
+		gregion$color <- "0,255,0"
+		oregion$color <- "0,0,255"
+
+		df.regions <- rbind(cregion, gregion, oregion)
+
 		# write regions file
 
 		message("\twritting regions file","\t", date())
-		write.table(cregion, paste("./", chr.name, ".cregion.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
-		write.table(gregion, paste("./", chr.name, ".gregion.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
-		write.table(oregion, paste("./", chr.name, ".oregion.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
-
+		write.table(df.regions, paste("./", chr.name, ".regions.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 	 	# write wig file
 
