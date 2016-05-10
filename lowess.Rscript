@@ -192,11 +192,12 @@ for (file.name in mtbr.filenames){
 		rng.seg <- IRanges(start = df.seg$xs * 1e8, end = df.seg$xe * 1e8)
 		rng.score <- IRanges(start = rescale.data$score * 1e8, end = rescale.data$score * 1e8)
 		ov <- findOverlaps(rng.score, rng.seg, select = "first")
+		ov[is.na(ov)] <- 1
 		rescale.data$id <- ov
 		dt.rescale.data <- data.table(rescale.data)
 		dt.seg <- data.table(df.seg)
 		dt.rescale.data <- merge(dt.rescale.data, dt.seg, by = "id")
-
+		dt.rescale.data <- dt.rescale.data[order(dt.rescale.data$pos),]
 		# data.trans <- dt.rescale.data[,.(value = Transform(score, density, xs, ys, delta, theta)), by = pos]
 		# df.trans <- data.frame(score = data.trans$value[seq(1, nrow(data.trans), 2)], density = data.trans$value[seq(2, nrow(data.trans), 2)])
 
