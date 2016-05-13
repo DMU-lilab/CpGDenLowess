@@ -48,53 +48,6 @@ RescaleData <- function(density, score) {
    return(data.frame(density = density.scale, score = score.scale))
  }
 
-LowesNormalise <- function(rescale.data, cg.mtbr, kFracSpan, kBinSize){
-
-   rescale.data.cg <- rescale.data[cg.mtbr$posi,]
-   lowess.data <- lowess(rescale.data.cg$score, rescale.data.cg$density, f = kFracSpan)
-
-   # build segements
-
-   message("\tbuilding segements ", "\t", date())  
-   step <- (max(lowess.data$x) - min(lowess.data$x)) / kBinSize
-   x <- seq(min(lowess.data$x), max(lowess.data$x), step)
-   y <- approx(lowess.data, xout= x)$y
-   x.start <- head(x, -1)
-   y.start <- head(y, -1)
-   x.end <- tail(x, -1)
-   y.end <- tail(y, -1)
-   a <- (y.end - y.start) / (x.end - x.start)
-   b <- y.start - a * x.start
-   # theta <- -(atan(a) + (45 *pi / 180))
-   theta <- -45 * pi / 180
-   delta = (1 - x.start - y.start) / 2
-   df.seg <- data.frame(id = 1:length(x.start), xs = x.start, ys = y.start, xe = x.end, ye = y.end, delta = delta, theta = theta )
-   df.seg$xe[nrow(df.seg)] <- df.seg$xe[nrow(df.seg)] + 0.1 
-   rng.seg <- IRanges(start = df.seg$xs * 1e8, end = df.seg$xe * 1e8)
-   rng.score <- IRanges(start = rescale.data$score * 1e8, end = rescale.data$score * 1e8)
-   ov <- findOverlaps(rng.score, rng.seg, select = "first")
-   ov[is.na(ov)] <- 1
-   rescale.data$id <- ov
-   dt.rescale.data <- data.table(rescale.data)
-   dt.seg <- data.table(df.seg)
-   dt.rescale.data <- merge(dt.rescale.data, dt.seg, by = "id")
-   dt.rescale.data <- dt.rescale.data[order(dt.rescale.data$pos),]
-
-   dt.rescale.data$xt <- with(dt.rescale.data, score + delta)
-   dt.rescale.data$yt <- with(dt.rescale.data, density + delta)      
-   dt.rescale.data$cx <- with(dt.rescale.data, xs + delta)
-   dt.rescale.data$cy <- with(dt.rescale.data, ys + delta)
-   dt.rescale.data$xt <- with(dt.rescale.data, xt - cx)
-   dt.rescale.data$yt <- with(dt.rescale.data, yt - cy)
-   dt.rescale.data$xr <- with(dt.rescale.data, xt * cos(theta) - yt * sin(theta))
-   dt.rescale.data$yr <- with(dt.rescale.data, xt * sin(theta) + yt * cos(theta))
-   dt.rescale.data$score.t <- with(dt.rescale.data, xr + cx)
-   dt.rescale.data$density.t <- with(dt.rescale.data, yr + cy)
-   dt.rescale.data$icmp <- dt.rescale.data$density.t + dt.rescale.data$score.t - 1
-   dt.rescale.data$pdiff <- with(dt.rescale.data, abs(score.t - density.t) / (score.t + density.t))
-
- return(dt.rescale.data)
-}
 
 GetBed <- function(dt.rescale.data, kGapDelta, kOverlapDelta, kRightDelta, kLeftDelta, kCutLen, kTolLen){
    dt.rescale.data$ptype <- "M"
@@ -167,12 +120,10 @@ option_list <- list(
     make_option(c("-n","--genome-name"), help="genome library object name. ex: \"Mmusculus\", \"Hsapiens\", \"Scerevisiae\"", default = "Mmusculus"),
     make_option(c("-t","--genome-type"), help="genome type , example mm9, mm10, hg19, hg18, default is NULL", default = ""),
     make_option(c("-w","--window-size"), help="sliding window size , default is 2500", default = 2500),
-    make_option(c("-b","--bin-size"), help="bin size , default is 5000", default = 5000),
-    make_option(c("-f","--frac-span"), help="frac span , default is 0.08", default = 0.08),
     make_option(c("-g","--gap-delta"), help="gap delta , default is 0.5", default = 0.5),
     make_option(c("-o","--overlap-delta"), help="overlap delta , default is 0.1", default = 0.1),
-	make_option(c("-i","--right-delta"), help="right delta , default is 0.75", default = 0.75),
-	make_option(c("-j","--left-delta"), help="left delta , default is 0.5", default = 0.5),
+    make_option(c("-i","--right-delta"), help="right delta , default is 0.75", default = 0.75),
+	 make_option(c("-j","--left-delta"), help="left delta , default is 0.5", default = 0.5),
     make_option(c("-e","--cut-len"), help="cutoff length , default is 500", default = 500),
     make_option(c("-r","--tol-len"), help="tolerance length , default is 50", default = 50)
 )
@@ -187,8 +138,6 @@ kGenomeName <- opt$`genome-name`
 kGenomeType <- opt$`genome-type`
 kWindowSize <- opt$`window-size`
 kMtbrPath <- arguments$args
-kBinSize <- opt$`bin-size`
-kFracSpan <- opt$`frac-span`
 kGapDelta <- opt$`gap-delta`
 kOverlapDelta <- opt$`overlap-delta`
 kRightDelta <- opt$`right-delta`
@@ -261,12 +210,9 @@ for (file.name in mtbr.filenames){
 		message("\trescaling ", "\t", date())
 	 	rescale.data <- RescaleData(density, score)
  		rescale.data$pos <- 1:nrow(rescale.data)
-
- 		#  lowess
-
- 		message("\tlowess regression ", "\t", date())
- 		
- 		dt.rescale.data <- LowesNormalise(rescale.data, cg.mtbr, kFracSpan, kBinSize)
+      dt.rescale.data <- data.table(rescale.data)
+      dt.rescale.data$icmp <- dt.rescale.data$density + dt.rescale.data$score - 1
+      dt.rescale.data$pdiff <- with(dt.rescale.data, abs(score - density) / (score + density))
 
  		# Get regions
 		message("\tgetting regions","\t", date())
