@@ -10,7 +10,7 @@ suppressPackageStartupMessages(library("zoo", quietly=TRUE, verbose=FALSE, warn.
 suppressPackageStartupMessages(library("methyutils", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("IRanges", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 
-if(!exists("foo", mode="function")) source("cgDensity.lib.R")
+source("./cgDensity.lib.R", chrdir = TRUE)
 ##Specify desired options in a list
 
 option_list <- list(
@@ -103,7 +103,7 @@ for (sample.name in sample.names){
 
 	 	# get CG Density
 	
-	 	message("\tgetting CG density ", "\t", date())
+	 	message(chr.name, "\tgetting CG density ", "\t", date())
 	 	
 	 	dna.seq <- kGenome[[chr.name]]
 	 	ref.length <- length(dna.seq)
@@ -111,12 +111,12 @@ for (sample.name in sample.names){
 
 		# get Score 
 		
-		message("\tgetting Score ", "\t", date())
+		message(chr.name, "\tgetting Score ", "\t", date())
 		score <- GetScore(cg.mtbr, kWindowSize, ref.length)
 
 	 	# rescale
 
-		message("\trescaling ", "\t", date())
+		message(chr.name, "\trescaling ", "\t", date())
 	 	rescale.data <- RescaleData(density, score)
  		rescale.data$pos <- 1:nrow(rescale.data)
         dt.rescale.data <- data.table(rescale.data)
