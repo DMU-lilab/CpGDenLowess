@@ -10,8 +10,7 @@ suppressPackageStartupMessages(library("zoo", quietly=TRUE, verbose=FALSE, warn.
 suppressPackageStartupMessages(library("methyutils", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("IRanges", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 
-source("./cgDensity.lib.R")
-
+if(!exists("foo", mode="function")) source("cgDensity.lib.R")
 ##Specify desired options in a list
 
 option_list <- list(
