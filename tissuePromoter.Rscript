@@ -10,7 +10,17 @@ suppressPackageStartupMessages(library("zoo", quietly=TRUE, verbose=FALSE, warn.
 suppressPackageStartupMessages(library("methyutils", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("IRanges", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 
-source("./cgDensity.lib.R", chdir = TRUE)
+
+getScriptPath <- function(){
+    cmd.args <- commandArgs()
+    m <- regexpr("(?<=^--file=).+", cmd.args, perl=TRUE)
+    script.dir <- dirname(regmatches(cmd.args, m))
+    if(length(script.dir) == 0) stop("can't determine script dir: please call the script with Rscript")
+    if(length(script.dir) > 1) stop("can't determine script dir: more than one '--file' argument detected")
+    return(script.dir)
+}
+
+source(paste(getScriptPath(),"/cgDensity.lib.R", sep = ""), chdir = TRUE)
 ##Specify desired options in a list
 
 option_list <- list(
