@@ -93,7 +93,7 @@ gene.multi.promoter.expand <- as.data.table(gene.multi.promoter)[,.(posi = promS
 for (sample.name in sample.names){
 
 	gene.multi.promoter[, sample.name] <- 0
- 	sample.mtbr.path <- paste(kSamplePath, "/", sample.name, "/mtbr_cg", sep="")
+ 	sample.mtbr.path <- paste(kSamplePath, "/", sample.name, "/mtbr_cg/", sep="")
  	message("[*] Processing ", sample.name, "\t", date())
  	chr.mtbr.files <- list.files(sample.mtbr.path)
  	for (chr.mtbr.file in chr.mtbr.files){
