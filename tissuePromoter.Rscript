@@ -93,10 +93,9 @@ gene.multi.promoter$promStart <- with(gene.multi.promoter, txStart - kPromoterRa
 gene.multi.promoter$promEnd <- with(gene.multi.promoter, txStart + kPromoterRange)
 gene.multi.promoter$promStart[gene.multi.promoter$strand == "-"] <- with(gene.multi.promoter[gene.multi.promoter$strand == "-",], txEnd - kPromoterRange)
 gene.multi.promoter$promEnd[gene.multi.promoter$strand == "-"] <- with(gene.multi.promoter[gene.multi.promoter$strand == "-",], txEnd + kPromoterRange)
+gene.multi.promoter <- gene.multi.promoter[order(gene.multi.promoter$geneSymbol),]
 gene.multi.promoter$promId <- as.data.table(gene.multi.promoter)[,.(id = c(1:length(chrom))), by = geneSymbol]$id
 gene.multi.promoter.expand <- as.data.table(gene.multi.promoter)[,.(posi = promStart:promEnd, chrom, geneSymbol), by = id]
-
-
 
 # process by sample
 
