@@ -130,7 +130,7 @@ option_list <- list(
     make_option(c("-n","--genome-name"), help="genome library object name. ex: \"Mmusculus\", \"Hsapiens\", \"Scerevisiae\"", default = "Mmusculus"),
     make_option(c("-t","--genome-type"), help="genome type , example mm9, mm10, hg19, hg18, default is NULL", default = ""),
     make_option(c("-w","--window-size"), help="sliding window size , default is 2500", default = 2500),
-    make_option(c("-g","--gap-delta"), help="gap delta , default is 0.1", default = 0.1),
+    make_option(c("-d","--gap-delta"), help="gap delta , default is 0.1", default = 0.1),
     make_option(c("-o","--overlap-delta"), help="overlap delta , default is 0.1", default = 0.1),
     make_option(c("-i","--right-delta"), help="right delta , default is 0.75", default = 0.75),
 	  make_option(c("-j","--left-delta"), help="left delta , default is 0.5", default = 0.5),
