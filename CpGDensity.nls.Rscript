@@ -230,6 +230,7 @@ for (file.name in mtbr.filenames){
     b <- summaryfit$parameters[2]
     c <- summaryfit$parameters[3]
 
+    message(chr.name," a=",a," b=", b," c=", c )
     # get regions
 
     df.regions <- GetBed(dt.rescale.data, a, b, c, kGapDelta, kOverlapDelta, kRightDelta, kLeftDelta, kCutLen, kTolLen)    
