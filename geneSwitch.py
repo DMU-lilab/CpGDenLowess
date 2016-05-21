@@ -4,11 +4,12 @@
 from __future__ import print_function
 from __future__ import division
 
+import csv
 
 def load_csv(filename):
 	dictGeneSwitch = {}
 	with open(filename, 'r') as csvfile:
-		lines = csv.reader(cgcsvFile, delimiter = '\t')
+		lines = csv.reader(csvfile, delimiter = '\t')
 		next(lines, None)
 		for line in lines:
 			tissue = line[2].strip()
@@ -18,14 +19,12 @@ def load_csv(filename):
 				tdata = {}
 
 			gene = line[0]
+			if not gene in tdata:
+				tdata[gene] = []
 			tdata[gene] += [(int(line[1]), int(line[3]))]
 
 			dictGeneSwitch[tissue] = tdata
 	csvfile.close()
-
-	for tissue in dictGeneSwitch:
-		tdata = dictGeneSwitch[tissue]
-		dictGeneSwitch[tissue] = sorted(tdata.iteritems(), key=lambda d:d[0])
 
 	return(dictGeneSwitch)
 
@@ -36,16 +35,17 @@ def _has_open_switch(gene):
 	return False
 
 def _build_link(preGene, preGeneData, gene, promoter):
-	link = '{"name":"flare.' + gene + '.P' + str(promoter[0]) + '",';
+	link = '{"name":"flare.' + gene + '.'+ gene +'P' + str(promoter[0]) + '",';
 	imports = []
 	for prePromoter in preGeneData:
 		if prePromoter[1] == 0:
-			imports += ['"flare.'+ preGene +'.P'+ str(prePromoter[0]) + '"']
+			imports += ['"flare.'+ preGene + '.' + preGene + 'P'+ str(prePromoter[0]) + '"']
+			break;
 	link += '"imports":[' + ','.join(imports) + ']}'
 	return link
 
 def generate_d3js_json(dictGeneSwitch):
-	json = ''
+	links = []
 	for tissue in dictGeneSwitch:
 		tdata = dictGeneSwitch[tissue]
 		genes = tdata.keys()
@@ -54,7 +54,7 @@ def generate_d3js_json(dictGeneSwitch):
 			
 			# where this gene has open switches
 
-			if !_has_open_switch(gene):
+			if not _has_open_switch(tdata[gene]):
 				continue
 
 			# fine the previous gene
@@ -65,7 +65,7 @@ def generate_d3js_json(dictGeneSwitch):
 				j += len(genes)
 			while j != i:
 
-				if _has_open_switch(genes[j]):
+				if _has_open_switch(tdata[genes[j]]):
 					preGene = genes[j]
 					break;
 
@@ -75,25 +75,16 @@ def generate_d3js_json(dictGeneSwitch):
 
 			# build links
 
-			links = []
 			if(preGene):
 				for promoter in tdata[gene]:
 					if(promoter[1] == 0):
-						links += [_build_link(gene, tdata[preGene], promoter)]
+						links += [_build_link(preGene, tdata[preGene], gene, promoter)]
 
-			return ('[' + ','.join(links) + ']')						
-															
-def write_csv(links, filename):
-	try:
-		csvFile = open(filename, 'w')
-	except IOError:
-		log.info('error: write to csv file "' + filename + '" failed!')
-		sys.exit(-1)
-	
-	csvFile.write('\n'.join([format('%f\t%f' % (cg[0], cg[1])) for cg in cgdata]))		
-	csvFile.close()
+	return ('[' + ','.join(links) + ']')						
+														
 
 dictGeneSwitch = load_csv("/home/fsch/Project/CpGDenLowess/test/bonemarrow/multipromoter/geneSwitch.csv")
+print(dictGeneSwitch)
 links = generate_d3js_json(dictGeneSwitch)
 
 jsonFile = open("/home/fsch/Project/CpGDenLowess/test/bonemarrow/multipromoter/geneSwitch.d3js.json", 'w')
