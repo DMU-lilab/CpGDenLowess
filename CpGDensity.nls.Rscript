@@ -223,8 +223,9 @@ for (file.name in mtbr.filenames){
     dt.rescale.data <- data.table(rescale.data)
     rescale.data.cg <- rescale.data[cg.mtbr$posi,]
 
- 		nlsfit <- nls(density ~ c / (score + a) - b, data = rescale.data.cg, start = list(a = 0.1, b = 0.1, c = 0.1 ), control = nls.control(maxiter = 500, tol = 1e-08, minFactor = 1
-/1024)) 
+ 		#nlsfit <- nls(density ~ c / (score + a) - b, data = rescale.data.cg, start = list(a = 0.1, b = 0.1, c = 0.1 ), control = nls.control(maxiter = 500, tol = 1e-08, minFactor = 1 / 1024)) 
+    nlsfit <- nls(density ~ c / (score + a) - b, data = rescale.data.cg, start = list(a = 0.1, b = 0.1, c = 0.1 )) 
+    
     summaryfit <- summary(nlsfit)
     a <- summaryfit$parameters[1]
     b <- summaryfit$parameters[2]
