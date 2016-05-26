@@ -35,3 +35,11 @@ RescaleData <- function(density, score) {
    
    return(data.frame(density = density.scale, score = score.scale))
 }
+
+NLCor <- function(vo, vf) {
+   sse <- sum((vo - vf)^2)
+   sst <- sum((vo - mean(vo))^2)
+
+   return(sqrt(1 - sse / sst))
+}
+
