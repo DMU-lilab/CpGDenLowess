@@ -330,6 +330,9 @@ for (file.name in mtbr.filenames){
     # figures
     publication.theme <- theme_bw(15) + theme(axis.title.y=element_text(vjust=1.7), axis.title.x=element_text(vjust=-0.1), text= element_text(size = 24, face = "bold"), axis.line = element_line(colour = "black", size = 0.1), panel.border = element_rect(colour = "black", size = 1, fill = NA), panel.background = element_rect(fill = "white", size = 5), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.ticks.length=unit(-0.25, "cm"), axis.ticks.margin=unit(0.5, "cm"))
 
+    df.fit <- data.frame(score = seq( 0, 1, 0.01)) 
+    df.fit$density <- predict(nlsfit, newdata = df.fit) 
+
     ##
     png(filename =  paste("./", chr.name, ".scatter.png", sep = ""), width = 1024, height = 1024)
     ggplot(data, aes(x = score, y = density)) + geom_point(aes(colour = factor(type))) + scale_color_manual(values = c("#1F77B4", "#FF7F0E", "#2CA02C","#D62728"))  + geom_line(data = df.fit[df.fit$score >= 0 & df.fit$score <= 1,], aes(x = score, y = density), linetype = "dashed", size = 0.2) + geom_line(data = df.fit[df.fit$score + GapDelta >= 0 & df.fit$score + GapDelta <= 1,], aes(x = score + GapDelta, y = density + GapDelta), linetype = "dashed", size = 0.2) +
