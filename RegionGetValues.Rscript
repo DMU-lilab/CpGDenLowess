@@ -13,7 +13,7 @@ suppressPackageStartupMessages(library("data.table", quietly=TRUE, verbose=FALSE
 
 option_list <- list(
     make_option(c("-m","--mtbr-path"), help="used to read the samples cg.mtbr file", default = "./"),
-    make_option(c("-c","--cover-num"), help="set min cover number", default = 4),
+    make_option(c("-c","--cover-num"), help="set min cg mtbr cover number", default = 4),
     make_option(c("-l","--genome-library"), help="Bioconductor BSgenome library name", default = "BSgenome.Mmusculus.UCSC.mm9"),
     make_option(c("-n","--genome-name"), help="genome library object name. ex: \"Mmusculus\", \"Hsapiens\", \"Scerevisiae\"", default = "Mmusculus"),
     make_option(c("-t","--genome-type"), help="genome type , example mm9, mm10, hg19, hg18, default is NULL", default = ""),
@@ -115,7 +115,7 @@ sample.filenames <- list.files(kMtbrPath)
 		##
 		cg.mtbr$rC <- cg.mtbr$rC_n + cg.mtbr$rC_p
 		cg.mtbr$rT <- cg.mtbr$rT_n + cg.mtbr$rT_p
-		cg.mtbr <- cg.mtbr[cg.mtbr$rC + cg.mtbr$rT > 4,]
+		cg.mtbr <- cg.mtbr[cg.mtbr$rC + cg.mtbr$rT > kCoverNum,]
 		cg.mtbr$cover <- with(cg.mtbr, rC + rT)
 		cg.mtbr$score <- with(cg.mtbr, rC / (rC + rT))
 		
