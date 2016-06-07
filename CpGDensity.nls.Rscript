@@ -334,8 +334,9 @@ for (file.name in mtbr.filenames){
     df.fit$density <- predict(nlsfit, newdata = df.fit) 
 
     ##
+    n <- seq(1, nrow(data), 100)
     png(filename =  paste("./", chr.name, ".scatter.png", sep = ""), width = 1024, height = 1024)
-   print(ggplot(data, aes(x = score, y = density)) + geom_point(aes(colour = factor(type))) + scale_color_manual(values = c("#1F77B4", "#FF7F0E", "#2CA02C","#D62728"))  + geom_line(data = df.fit[df.fit$score >= 0 & df.fit$score <= 1,], aes(x = score, y = density), linetype = "dashed", size = 0.2) + geom_line(data = df.fit[df.fit$score + GapDelta >= 0 & df.fit$score + GapDelta <= 1,], aes(x = score + GapDelta, y = density + GapDelta), linetype = "dashed", size = 0.2) +
+    print(ggplot(data[n,], aes(x = score, y = density)) + geom_point(aes(colour = factor(type))) + scale_color_manual(values = c("#1F77B4", "#FF7F0E", "#2CA02C","#D62728"))  + geom_line(data = df.fit[df.fit$score >= 0 & df.fit$score <= 1,], aes(x = score, y = density), linetype = "dashed", size = 0.2) + geom_line(data = df.fit[df.fit$score + GapDelta >= 0 & df.fit$score + GapDelta <= 1,], aes(x = score + GapDelta, y = density + GapDelta), linetype = "dashed", size = 0.2) +
       geom_line(data = df.fit[df.fit$score + OverlapDelta >= 0 & df.fit$score + OverlapDelta <= 1 ,], aes(x = score + OverlapDelta, y = density + OverlapDelta), linetype = "dashed", size = 0.2) + publication.theme + ylim(c(0, 1)) + xlim(c(0, 1)) + theme(legend.position = c(0.75,0.92), legend.direction = "horizontal" ,  legend.key = element_rect(colour = "white"), legend.title = element_blank()))
 
     dev.off()
