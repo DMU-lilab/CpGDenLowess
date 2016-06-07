@@ -9,6 +9,8 @@ suppressPackageStartupMessages(library("data.table", quietly=TRUE, verbose=FALSE
 suppressPackageStartupMessages(library("zoo", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("methyutils", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 suppressPackageStartupMessages(library("IRanges", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("ggplot2", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
+suppressPackageStartupMessages(library("grid", quietly=TRUE, verbose=FALSE, warn.conflicts=FALSE))
 
 # function
 
@@ -67,8 +69,7 @@ SlicePdf <- function(data, k, l, slice.step){
   return(df.slice)
 }
 
-GetBed <- function(data, k, l, cmpl.gap, cmpl.overlap, pdiff.H, pdiff.L, kCutLen, kTolLen){
-
+GetDataType <- function(data, k, l, cmpl.gap, cmpl.overlap, pdiff.H, pdiff.L){
 
     data$densityH <- exp( -k * (data$score - cmpl.overlap)) + l + cmpl.overlap
     data$densityL <- exp( -k * (data$score - cmpl.gap)) + l + cmpl.gap
@@ -87,7 +88,14 @@ GetBed <- function(data, k, l, cmpl.gap, cmpl.overlap, pdiff.H, pdiff.L, kCutLen
     data$type <- "C"
     data$type[data$itype == "H" & data$ptype != "H"] <- "O"
     data$type[data$itype == "L" & data$ptype != "H"] <- "G"
-    data$type[data$itype == "M" & data$ptype == "M"] <- "B"
+    data$type[data$itype == "M" & data$ptype != "H"] <- "B"
+
+    return(data)
+
+}
+
+GetBed <- function(data, kCutLen, kTolLen){
+
 
     cmarker <- data$type == "C"
     gmarker <- data$type == "G"
@@ -141,6 +149,8 @@ GetBed <- function(data, k, l, cmpl.gap, cmpl.overlap, pdiff.H, pdiff.L, kCutLen
    return(df.regions)
 }
 
+
+
 ##Specify desired options in a list
 
 option_list <- list(
@@ -149,11 +159,11 @@ option_list <- list(
     make_option(c("-t","--genome-type"), help="genome type , example mm9, mm10, hg19, hg18, default is NULL", default = ""),
     make_option(c("-w","--window-size"), help="sliding window size , default is 2500", default = 2500),
     make_option(c("-c","--cut-len"), help="cutoff length , default is 500", default = 500),
-    make_option(c("-t","--tol-len"), help="tolerance length , default is 50", default = 50),
-    make_option(c("-u","--cmpl-upper"), help="complementary upper , default is 0.95", default = 0.95),
-    make_option(c("-p","--cmpl-lower"), help="complementary lower , default is 0.05", default = 0.05),
-    make_option(c("-r","--pdiff-upper"), help="pdiff upper , default is 0.95", default = 0.95),
-    make_option(c("-d","--pdiff-lower"), help="pdiff lower , default is 0.05", default = 0.05)
+    make_option(c("-o","--tol-len"), help="tolerance length , default is 50", default = 50),
+    make_option(c("-u","--cmpl-upper"), help="complementary upper , default is 0.9", default = 0.9),
+    make_option(c("-p","--cmpl-lower"), help="complementary lower , default is 0.2", default = 0.2),
+    make_option(c("-r","--pdiff-upper"), help="pdiff upper , default is 0.8", default = 0.8),
+    make_option(c("-d","--pdiff-lower"), help="pdiff lower , default is 0.2", default = 0.2)
 
 )
 
@@ -243,7 +253,19 @@ for (file.name in mtbr.filenames){
     dt.rescale.data <- data.table(rescale.data)
     rescale.data.cg <- rescale.data[cg.mtbr$posi,]
 
-    #Get delta
+ 		# nlsfit <- nls(density ~ c0 / (score + delta.s) - delta.d, data = rescale.data.cg, start = list(delta.s = 0.1, delta.d = 0.1, c0 = 0.1 ), control = nls.control(maxiter = 500, tol = 1e-06, minFactor = 1 / 1024)) 
+    nlsfit <- nls(density ~ exp(-k * score) + l, data = rescale.data.cg, start = list(k = 5, l = 0.1), control = nls.control(maxiter = 500, tol = 1e-06, minFactor = 1 / 1024)) 
+   
+
+    summaryfit <- summary(nlsfit)
+    k <- summaryfit$parameters[1]
+    l <- summaryfit$parameters[2]
+    
+    nl.cor <- cor(rescale.data.cg$density, predict(nlsfit))
+
+    message(chr.name," k=", k," l=", l)
+
+   #Get delta
 
     rescale.data.cg$der <- -k * (exp(-k * rescale.data.cg$score))
     rescale.data.cg$theta <- pi + atan(rescale.data.cg$der) 
@@ -262,30 +284,19 @@ for (file.name in mtbr.filenames){
     LeftDelta <- pdiff.quantile[[1]]
     RightDelta <- pdiff.quantile[[2]]
 
- 		# nlsfit <- nls(density ~ c0 / (score + delta.s) - delta.d, data = rescale.data.cg, start = list(delta.s = 0.1, delta.d = 0.1, c0 = 0.1 ), control = nls.control(maxiter = 500, tol = 1e-06, minFactor = 1 / 1024)) 
-    nlsfit <- nls(density ~ exp(-k * score) + l, data = rescale.data.cg, start = list(k = 5, l = 0.1), control = nls.control(maxiter = 500, tol = 1e-06, minFactor = 1 / 1024)) 
-        
-
-    summaryfit <- summary(nlsfit)
-    k <- summaryfit$parameters[1]
-    l <- summaryfit$parameters[2]
-    
-    nl.cor <- cor(rescale.data.cg$density, predict(nlsfit))
-
-    message(chr.name," k=", k," l=", l)
-
+    # 
     df.coeffi <- data.frame(chrom = chr.name, k = k, l = l, nl.cor = nl.cor, GapDelta = GapDelta, OverlapDelta = OverlapDelta, LeftDelta = LeftDelta, RightDelta = RightDelta)
     message("\twritting coefficient csv","\t", date())
-    write.csv(df.coeffi, paste("./", chr.name, ".coefficient.csv", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t", append = TRUE)
+    write.table(df.coeffi, paste("./", chr.name, ".coefficient.csv", sep = ""), row.names = FALSE, col.names = TRUE, quote = FALSE, sep = "\t")
 
     # slicePdf
     df.slice <- SlicePdf(dt.rescale.data, k, l, slice.step = 0.1)
     message("\twritting slice csv","\t", date())
-    write.csv(df.slice, paste("./", chr.name,".slice.csv", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t", append = TRUE)
+    write.table(df.slice, paste("./", chr.name,".slice.csv", sep = ""), row.names = FALSE, col.names = TRUE, quote = FALSE, sep = "\t")
                      
     # get regions
-
-    df.regions <- GetBed(dt.rescale.data, k = k, l = l, cmpl.gap = GapDelta, cmpl.overlap = OverlapDelta, pdiff.H = RightDelta, pdiff.L = LeftDelta, kCutLen = kCutLen, kTolLen = kTolLen)
+    data <- GetDataType(dt.rescale.data, k = k, l = l, cmpl.gap = GapDelta, cmpl.overlap = OverlapDelta, pdiff.H = RightDelta, pdiff.L = LeftDelta)
+    df.regions <- GetBed(data, kCutLen = kCutLen, kTolLen = kTolLen)
 
     # get regions value
     cg.mtbr$cover <- cg.mtbr$rC_n + cg.mtbr$rC_p + cg.mtbr$rT_n + cg.mtbr$rT_p
@@ -295,20 +306,77 @@ for (file.name in mtbr.filenames){
     dt.regions$id <- 1:nrow(dt.regions)
     dt.regions.expand <- dt.regions[,.(posi = start:end), by = id]
     dt.regions.expand$cover <- cover[dt.regions.expand$posi]
+    dt.regions.expand$density <- dt.rescale.data$density[dt.regions.expand$posi]
+    dt.regions.expand$score <- dt.rescale.data$score[dt.regions.expand$posi]
+
     dt.regions$cover <- dt.regions.expand[,.(cover = sum(cover)), keyby = id]$cover
+    dt.regions$meanDensity <- dt.regions.expand[,.(meanDensity = mean(density)), keyby = id]$meanDensity
+    dt.regions$meanScore <- dt.regions.expand[,.(meanScore = mean(score)), keyby = id]$meanScore
+    
     dt.regions <- dt.regions[dt.regions$cover > 0 ,]
  
     message("\twritting regions file","\t", date())
-    write.table(dt.regions[,1:9], paste("./", chr.name, ".regions.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
+    write.table(dt.regions[,1:9, with = FALSE], paste("./", chr.name, ".regions.bed", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
 
-    dt.regions.G <- dt.regions[dt.regions$type == "G",c(1:3,11)]
-    dt.regions.O <- dt.regions[dt.regions$type == "O",c(1:3,11)]
-    dt.regions.B <- dt.regions[dt.regions$type == "B",c(1:3,11)]
-    dt.regions.C <- dt.regions[dt.regions$type == "C",c(1:3,11)]
+    dt.regions.G <- dt.regions[dt.regions$type == "G",c(1:3), with = FALSE]
+    dt.regions.O <- dt.regions[dt.regions$type == "O",c(1:3), with = FALSE]
+    dt.regions.B <- dt.regions[dt.regions$type == "B",c(1:3), with = FALSE]
+    dt.regions.C <- dt.regions[dt.regions$type == "C",c(1:3), with = FALSE]
     write.table(dt.regions.G, paste("./", chr.name, ".regions.G.csv", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
     write.table(dt.regions.O, paste("./", chr.name, ".regions.O.csv", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
     write.table(dt.regions.B, paste("./", chr.name, ".regions.B.csv", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
     write.table(dt.regions.C, paste("./", chr.name, ".regions.C.csv", sep = ""), row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
+
+    # figures
+    publication.theme <- theme_bw(15) + theme(axis.title.y=element_text(vjust=1.7), axis.title.x=element_text(vjust=-0.1), text= element_text(size = 24, face = "bold"), axis.line = element_line(colour = "black", size = 0.1), panel.border = element_rect(colour = "black", size = 1, fill = NA), panel.background = element_rect(fill = "white", size = 5), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.ticks.length=unit(-0.25, "cm"), axis.ticks.margin=unit(0.5, "cm"))
+
+    ##
+    png(filename =  paste("./", chr.name, ".scatter.png", sep = ""), width = 1024, height = 1024)
+    ggplot(data, aes(x = score, y = density)) + geom_point(aes(colour = factor(type))) + scale_color_manual(values = c("#1F77B4", "#FF7F0E", "#2CA02C","#D62728"))  + geom_line(data = df.fit[df.fit$score >= 0 & df.fit$score <= 1,], aes(x = score, y = density), linetype = "dashed", size = 0.2) + geom_line(data = df.fit[df.fit$score + GapDelta >= 0 & df.fit$score + GapDelta <= 1,], aes(x = score + GapDelta, y = density + GapDelta), linetype = "dashed", size = 0.2) +
+      geom_line(data = df.fit[df.fit$score + OverlapDelta >= 0 & df.fit$score + OverlapDelta <= 1 ,], aes(x = score + OverlapDelta, y = density + OverlapDelta), linetype = "dashed", size = 0.2) + publication.theme + ylim(c(0, 1)) + xlim(c(0, 1)) + theme(legend.position = c(0.75,0.92), legend.direction = "horizontal" ,  legend.key = element_rect(colour = "white"), legend.title = element_blank())
+
+    dev.off()
+    ##
+    png(filename =  paste("./", chr.name, ".slice.pdf.png", sep = ""), width = 1024, height = 1024)
+    ggplot(df.slice, aes(x = step, y = diff / nrow(dt.rescale.data))) + geom_line() + geom_point() + publication.theme+  ylab("Density Distribution")
+    dev.off()
+    ##
+    png(filename =  paste("./", chr.name, ".slice.cdf.png", sep = ""), width = 1024, height = 1024)
+    ggplot(df.slice, aes(x = step, y = count / nrow(dt.rescale.data))) + geom_line() + geom_point() + publication.theme+  ylab("Accumulation Distribution")
+    dev.off()
+    
+    ## pdiff
+
+    d <- density(data$pdiff[data$density + data$score > 0], n = 1024)
+    d.fun <- approxfun(d)
+    df.point <- data.frame(x = c(LeftDelta, RightDelta), y = c(d.fun(LeftDelta), d.fun(RightDelta)))
+    df.d <- data.frame(x = d$x, y = d$y)
+    df.d$type = "M"
+    df.d$type[df.d$x <= LeftDelta] = "L"
+    df.d$type[df.d$x >= RightDelta] = "H"
+
+    png(filename =  paste("./", chr.name, ".pdf.png", sep = ""), width = 1024, height = 1024)
+
+    ggplot(df.d, aes(x = x, y = y, fill = type, group = type)) + geom_area() + publication.theme +  ylab("Density") +  xlab("Pdiff") + scale_fill_manual(values = c("H" = "#D62728", "L" = "#2CA02C", "M" = "#1F77B4")) + theme(legend.position = "none")
+    
+    dev.off()
+    
+    ## cdiff
+    cdiff <- density(rescale.data.cg$delta, n = 1024)
+    cdiff.fun <- approxfun(cdiff)
+    cdiff.point <- data.frame(x = c(GapDelta, OverlapDelta), y = c(d.fun(GapDelta), d.fun(OverlapDelta)))
+    df.cdiff <- data.frame(x = cdiff$x, y = cdiff$y)
+    df.cdiff$type = "M"
+    df.cdiff$type[df.cdiff$x <= GapDelta] = "L"
+    df.cdiff$type[df.cdiff$x >= OverlapDelta] = "H"
+
+    png(filename =  paste("./", chr.name, ".cdf.png", sep = ""), width = 1024, height = 1024)
+
+    ggplot(df.cdiff, aes(x = x, y = y, fill = type, group = type)) + geom_area() + publication.theme +  ylab("Density") +  xlab("Cdiff") + scale_fill_manual(values = c("H" = "#D62728", "L" = "#2CA02C", "M" = "#1F77B4")) + theme(legend.position = "none")
+    
+    dev.off()
+
+
 
 
 	 }
